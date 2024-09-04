@@ -1,0 +1,45 @@
+#this playbook is for installing docker and some security tools on aws ubuntu instance
+---
+- hosts: my
+  remote_user: ubuntu
+  become: true
+
+  tasks:
+    - name: Install security software
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - openssl
+        - openssh-server
+        - openssh-client
+      ignore_errors: yes 
+
+    - name: Update apt package index
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Check if Docker is installed
+      ansible.builtin.command: docker --version
+      register: output
+      ignore_errors: yes 
+
+    - name: Print the registered output
+      ansible.builtin.debug:
+        msg: "The docker version is: {{ output.stdout }}"
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt:
+        name: docker-ce
+        state: latest
+        update_cache: true
